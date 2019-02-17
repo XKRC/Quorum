@@ -1,0 +1,78 @@
+package Libraries.Interface.Events
+
+use Libraries.Interface.Item
+use Libraries.Game.GameStateManager
+
+class BehaviorEvent 
+    Item item = undefined
+    KeyboardEvent keyboardEvent = undefined
+    MouseEvent mouseEvent = undefined
+    TextInputEvent textInputEvent = undefined
+    TouchEvent touchEvent = undefined
+    number seconds = 0
+
+    on create
+        GameStateManager manager
+        seconds = manager:GetGameDisplay():GetSecondsBetweenFrames()
+    end
+
+    action GetItem returns Item
+        return item
+    end
+
+    action SetItem(Item i)
+        item = i
+    end
+
+    action GetKeyboardEvent returns KeyboardEvent
+        return keyboardEvent
+    end
+
+    action SetKeyboardEvent(KeyboardEvent event)
+        keyboardEvent = event
+    end
+
+    action GetMouseEvent returns MouseEvent
+        return mouseEvent
+    end
+
+    action SetMouseEvent(MouseEvent event)
+        mouseEvent = event
+    end
+
+    action GetTextInputEvent returns TextInputEvent
+        return textInputEvent
+    end
+
+    action SetTextInputEvent(TextInputEvent event)
+        textInputEvent = event
+    end
+
+    action GetTouchEvent returns TouchEvent
+        return touchEvent
+    end
+
+    action SetTouchEvent(TouchEvent event)
+        touchEvent = event
+    end
+
+    action SetSecondsSinceLastFrame(number seconds)
+        me:seconds = seconds
+    end
+
+    action GetSecondsSinceLastFrame returns number
+        return seconds
+    end
+
+    action Copy returns BehaviorEvent
+        BehaviorEvent event
+        event:SetItem(item)
+        event:SetKeyboardEvent(keyboardEvent)
+        event:SetMouseEvent(mouseEvent)
+        event:SetTextInputEvent(textInputEvent)
+        event:SetTouchEvent(touchEvent)
+        event:SetSecondsSinceLastFrame(seconds)
+        return event
+    end
+
+end

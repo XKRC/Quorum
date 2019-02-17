@@ -1,0 +1,8 @@
+class main
+    Integer i
+    Boolean bool
+    action Main
+        i:SetValue(5)
+        bool = cast(Boolean, i)
+    end
+end

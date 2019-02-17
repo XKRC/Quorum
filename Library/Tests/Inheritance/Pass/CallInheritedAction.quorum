@@ -1,0 +1,15 @@
+class Main
+    action Main
+        A a
+        B b
+        C c
+
+        text resultA = a:MethodOfA()
+        text resultB = b:MethodOfA()
+        text resultC = c:MethodOfA()
+
+        output resultA
+        output resultB
+        output resultC
+    end
+end

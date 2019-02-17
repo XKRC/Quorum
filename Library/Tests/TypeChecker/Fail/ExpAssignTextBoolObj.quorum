@@ -1,0 +1,8 @@
+class main
+    action Main
+        Boolean b
+        text txt = ""
+        b:SetValue(true)
+        txt = cast(text, b)
+    end
+end

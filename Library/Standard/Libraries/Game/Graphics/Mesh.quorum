@@ -1,0 +1,183 @@
+package Libraries.Game.Graphics
+
+use Libraries.Compute.Matrix3
+use Libraries.Compute.Matrix4
+use Libraries.Compute.Vector2
+use Libraries.Compute.Vector3
+use Libraries.Game.BoundingBox
+use Libraries.Containers.Array
+use Libraries.Game.Disposable
+use Libraries.Game.Graphics.IndexBufferObject
+use Libraries.Game.Graphics.VertexBufferObject
+use Libraries.Game.Graphics.IndexArray
+use Libraries.Game.Graphics.VertexArray
+
+class Mesh is Disposable
+
+    VertexData vertices = undefined
+    IndexData indices = undefined
+    boolean autoBind = true
+    boolean isVertexArray = false
+
+    on create
+        SetQuorumReference(me)
+    end
+
+    action Load(VertexData vertices, IndexData indices, boolean isVertexArray)
+        me:vertices = vertices
+        me:indices = indices
+        me:isVertexArray = isVertexArray
+
+        AddReloadableMesh()
+    end
+
+    action Load(boolean isStatic, integer maxVertices, integer maxIndices, VertexAttributes attributes)
+        vertices = MakeVertexBuffer(isStatic, maxVertices, attributes)
+        IndexBufferObject index
+        index:Load(isStatic, maxIndices)
+        indices = index
+        isVertexArray = false
+
+        AddReloadableMesh()
+    end
+
+    action Load(boolean isStatic, integer maxVertices, integer maxIndices, VertexAttributes attributes, boolean isArray)
+        if isArray = false
+            Load(isStatic, maxVertices, maxIndices, attributes)
+            return now
+        end
+
+        VertexArray vertexArray
+        vertexArray:Load(maxVertices, attributes)
+        vertices = vertexArray
+
+        IndexArray indexArray
+        indexArray:Load(maxIndices)
+        indices = indexArray
+
+        isVertexArray = true
+    end
+
+    private action MakeVertexBuffer(boolean isStatic, integer maxVertices, VertexAttributes attributes) returns VertexData
+        // if SupportsGL30() return new VertexBufferObjectWithVAO end
+        VertexBufferObject temp
+        temp:Load(isStatic, maxVertices, attributes)
+        return temp
+    end
+
+    action SetVertices(Array<number> vertices)
+       SetVertices(vertices, 0, vertices:GetSize()) 
+    end
+
+    action SetVertices(Array<number> vertices, integer offset, integer count)
+        me:vertices:SetVertices(vertices, offset, count)
+    end
+
+    action UpdateVertices(integer targetOffset, Array<number> source)
+        UpdateVertices(targetOffset, source, 0, source:GetSize())
+    end
+
+    action UpdateVertices(integer targetOffset, Array<number> source, integer sourceOffset, integer count)
+        vertices:UpdateVertices(targetOffset, source, sourceOffset, count)
+    end
+
+    action SetIndices(Array<number> indices)
+        me:indices:SetIndices(indices, 0, indices:GetSize())
+    end
+
+    action SetIndices(Array<number> indices, integer offset, integer count)
+        me:indices:SetIndices(indices, offset, count)
+    end
+
+    action GetIndicesCount returns integer
+        return indices:GetSize()
+    end
+
+    action GetVerticesCount returns integer
+        return vertices:GetSize()
+    end
+
+    action GetMaxIndices returns integer
+        return indices:GetMaxSize()
+    end
+
+    action GetMaxVertices returns integer
+        return vertices:GetMaxSize()
+    end
+
+    action Dispose
+        vertices:Dispose()
+        indices:Dispose()
+        RemoveReloadableMesh()
+    end
+
+    action GetVertexData returns VertexData
+        return vertices
+    end
+
+    action GetIndexData returns IndexData
+        return indices
+    end
+
+    action GetVertexAttributes returns VertexAttributes
+        return vertices:GetAttributes()
+    end
+
+    /*
+    This action will create a new BoundingBox object that will contain all of
+    the vertices stored in this Mesh. If no vertices have been defined yet, this
+    will alert an error.
+    */
+    action CalculateBoundingBox returns BoundingBox
+        BoundingBox box
+        return CalculateBoundingBox(box)
+    end
+
+    /*
+    This action will calculate the bounds of this Mesh's vertices, and store it
+    inside the given BoundingBox. This will overwrite any data in the provided
+    BoundingBox. If no vertices have been defined yet for this Mesh, the action
+    will alert an error.
+    */
+    system action CalculateBoundingBox(BoundingBox box) returns BoundingBox
+
+    /*
+    This action will extend the given BoundingBox to include the vertices of
+    this Mesh. If this Mesh has no vertices defined, this action will alert an
+    error.
+    */
+    system action ExtendBoundingBox(BoundingBox box, integer offset, integer count, Matrix4 transform) returns BoundingBox
+
+    action ExtendBoundingBox(BoundingBox box, integer offset, integer count)
+        ExtendBoundingBox(box, offset, count, undefined)
+    end
+
+    /*
+    This action forcibly reloads the Mesh's IndexData and VertexData. This is
+    necessary after the OpenGL context is lost. This is automatically performed
+    by the engine, so it shouldn't be necessary for users to call this directly.
+    */
+    action Reload
+        indices:Reload()
+        vertices:Reload()
+    end
+
+    /*
+    This action is used during creation to pass a reference of this object down
+    to the corresponding plugin class.
+    */
+    private system action SetQuorumReference(Mesh mesh)
+
+    /*
+    Adds this mesh to the static collection of meshes in the plugins, which are
+    maintained so that they can be reloaded in case of context loss.
+    */
+    private system action AddReloadableMesh
+
+    /*
+    Removes this mesh from the static collection of meshes in the plugins, which
+    are maintained so that they can be reloaded in case of context loss.
+    */
+    private system action RemoveReloadableMesh
+
+end

@@ -1,0 +1,11 @@
+class Main
+    action Main
+        boolean b = false
+        boolean bool = false
+        b = true
+        bool = cast(boolean, b)
+        if bool = true
+            output "passed"
+        end
+    end
+end

@@ -1,0 +1,6 @@
+class main
+    action Main
+        Test<number> something
+        something:doSomething(true)
+    end
+end

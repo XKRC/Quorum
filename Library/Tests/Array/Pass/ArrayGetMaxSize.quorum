@@ -1,0 +1,11 @@
+use Libraries.Containers.Array
+
+class Main
+    action Main
+        Array<integer> a
+        a:SetAutoResize(false)
+
+        integer size = a:GetMaxSize()
+        output size
+    end
+end

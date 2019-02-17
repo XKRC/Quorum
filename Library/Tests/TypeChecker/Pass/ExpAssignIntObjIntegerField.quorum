@@ -1,0 +1,9 @@
+class Main
+    Integer int
+    action Main
+        int = cast(Integer, 5)
+        if int:GetValue() = 5
+            output "passed"
+        end
+    end
+end

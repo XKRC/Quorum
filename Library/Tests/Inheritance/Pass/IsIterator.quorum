@@ -1,0 +1,7 @@
+use Libraries.Containers.Iterator
+
+class IsIterator<Type> is Iterator
+    action Main
+       output "hi" 
+    end
+end

@@ -1,0 +1,6 @@
+class main
+    action Main
+        Boolean bool
+        bool = cast(Boolean, "text")
+    end
+end

@@ -1,0 +1,971 @@
+package Libraries.Game.Graphics
+
+use Libraries.Containers.Array
+use Libraries.Containers.List
+use Libraries.Containers.Iterator
+use Libraries.System.File
+use Libraries.Interface.Item2D
+use Libraries.Game.Graphics.Painter2D
+
+/*
+The Label class is used to draw text on the screen using a Font that is loaded
+from the system. Labels will wrap text if the text is longer than the width of
+the Label.
+
+Attribute: Example
+
+    use Libraries.Game.Graphics.Label
+    use Libraries.Game.Game
+
+    class Main is Game
+        action Main
+            StartGame()
+        end
+
+        action CreateGame
+            Label label
+            label:SetText("Hello world!")
+            label:SetPosition(200, 200)
+            Add(label)
+        end
+    end
+*/
+class Label is Item2D
+
+    on create
+        SetName("Label")
+        Font font
+        if font:FontIsAvailable("Arial")
+            font:LoadFont("Arial")
+            SetFont(font)
+        elseif font:FontIsAvailable("Arial Unicode")
+            font:LoadFont("Arial Unicode")
+            SetFont(font)
+        elseif font:FontIsAvailable("Helvetica")
+            font:LoadFont("Helvetica")
+            SetFont(font)
+        elseif font:FontIsAvailable("Georgia")
+            font:LoadFont("Georgia")
+            SetFont(font)
+        elseif font:FontIsAvailable("Times New Roman")
+            font:LoadFont("Times New Roman")
+            SetFont(font)
+        elseif font:FontIsAvailable("Roboto-Black")
+            font:LoadFont("Roboto-Black")
+            SetFont(font)
+        else
+            Array<File> availableFontFiles = font:GetAvailableFonts()
+            if availableFontFiles:GetSize() > 0
+                font:LoadFont(availableFontFiles:Get(0))
+                SetFont(font)
+            end
+        end
+    end
+
+    /* Alignment controls are not yet implemented, and have been commented out
+    for this release. 
+    public constant integer LEFT_ALIGN = 0
+    public constant integer RIGHT_ALIGN = 1
+    public constant integer CENTER_ALIGN = 2
+
+    public constant integer TOP_ALIGN = 0
+    public constant integer BOTTOM_ALIGN = 1
+
+    integer horizontalAlignment = CENTER_ALIGN
+    integer verticalAlignment = CENTER_ALIGN */
+
+    integer horizontalMargins = 0
+    integer verticalMargins = 0
+
+    Font font
+    private text targetText = "TEXT"
+    private boolean textChanged = true
+
+    private number maxWidth = 0
+
+    /*
+    Sets the horizontal margins for this label. When the label's text is drawn,
+    there will be whitespace between the beginning of the label and the start of
+    the text and between the end of the text and the end of the label equal to
+    the given horizontal margins. By default, the margins are 0.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label1
+                label1:SetText("Hello world!")
+                label1:SetPosition(200, 300)
+                Add(label1)
+
+                Label label2
+                label2:SetText("Hello world!")
+                label2:SetPosition(200, 200)
+                label2:SetHorizontalMargins(50)
+                Add(label2)
+            end
+        end
+    */
+    action SetHorizontalMargins(integer margins)
+        horizontalMargins = margins
+    end
+
+    /*
+    This action will return the currently set horizontal margins of the label.
+    By default, the margins are 0.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:SetHorizontalMargins(50)
+                Add(label)
+                output "The margins are " + label:GetHorizontalMargins()
+            end
+        end
+    */
+    action GetHorizontalMargins returns integer
+        return horizontalMargins
+    end
+
+    /*
+    Sets the vertical margins for this label. When the label's text is drawn,
+    there will be whitespace between the top of the label and the start of
+    the text. By default, the margins are 0.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label1
+                label1:SetText("Hello world!")
+                label1:SetPosition(200, 200)
+                Add(label1)
+
+                Label label2
+                label2:SetText("Hello world!")
+                label2:SetPosition(400, 200)
+                label2:SetVerticalMargins(50)
+                Add(label2)
+            end
+        end
+    */
+    action SetVerticalMargins(integer margins)
+        verticalMargins = margins
+    end
+
+    /*
+    This action will return the currently set vertical margins of the label.
+    By default, the margins are 0.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:SetVerticalMargins(50)
+                Add(label)
+                output "The margins are " + label:GetVerticalMargins()
+            end
+        end
+    */
+    action GetVerticalMargins returns integer
+        return verticalMargins
+    end
+
+    /*
+    This action will set the Font that is being used by this label. By default,
+    labels will attempt to use Arial, Georgia, Times New Roman, or the first
+    font that can be found on the system, if possible.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Graphics.Font
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Font font
+                Label label
+
+                if font:FontIsAvailable("Verdana")
+                    font:LoadFont("Verdana")
+                    label:SetFont(font)
+                else
+                    output "Could not find the font!"
+                end
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                Add(label)
+            end
+        end
+    */
+    action SetFont(Font newFont)
+        textChanged = true
+        font = newFont
+    end
+
+    /*
+    This action will set the text that is drawn on the screen by the Label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                Add(label)
+            end
+        end
+    */
+    action SetText(text newText)
+        targetText = newText
+        textChanged = true
+    end
+
+    /*
+    This action will get the text that is being drawn on the screen by the Label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                Add(label)
+                output "The label text is " + label:GetText()
+            end
+        end
+    */
+    action GetText returns text
+        return targetText
+    end
+
+    /*
+    This action will set the Font that is being used by this label. By default,
+    labels will attempt to use Arial, Georgia, Times New Roman, or the first
+    font that can be found on the system, if possible.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Graphics.Font
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Font font = undefined
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                Add(label)
+                font = label:GetFont()
+            end
+        end
+    */
+    action GetFont returns Font
+        return font
+    end
+
+    /* Alignment controls are not yet implemented, and have been commented out
+    for this release. 
+    action SetHorizontalAlignment(integer align)
+        horizontalAlignment = align
+    end
+
+    action SetVerticalAlignment(integer align)
+        verticalAlignment = align
+    end*/
+
+    /*
+    This action will set the size of the font being used to draw the label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:SetSize(20)
+                Add(label)
+            end
+        end
+    */
+    action SetSize(integer size)
+        textChanged = true
+        font:SetSize(size)
+    end
+
+    /*
+    This action will set the color of the font being used to draw the label.
+
+    Attribute: Parameter color The color to use for the label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Graphics.Color
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                Color color
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:SetColor(color:Green())
+                Add(label)
+            end
+        end
+    */
+    action SetColor(Color color)
+        textChanged = true
+        font:SetColor(color)
+    end
+
+    /*
+    This action will set the color of the font being used to draw the label.
+    The color will be made using the combined red, green, blue, and alpha (or
+    transparency) components provided.
+
+    Attribute: Parameter red The red component of the color to use for the label.
+    Attribute: Parameter green The green component of the color to use for the label.
+    Attribute: Parameter blue The blue component of the color to use for the label.
+    Attribute: Parameter alpha The alpha (transparency) component of the color to use for the label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                // This will set the label to use a totally opaque shade of magenta.
+                label:SetColor(1, 0, 1, 1)
+                Add(label)
+            end
+        end
+    */
+    action SetColor(number red, number green, number blue, number alpha)
+        Color c
+        c:SetColor(red, green, blue, alpha)
+        SetColor(c)
+    end
+
+    /*
+    This action will return the color of the font being used to draw the label.
+
+    Attribute: Returns The color of the text in the label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Graphics.Color
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                Add(label)
+
+                Color color = label:GetColor()
+            end
+        end
+    */
+    action GetColor returns Color
+        return font:GetColor()
+    end
+
+    /*
+    This action will get the size of the font being used to draw the label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                Add(label)
+                output "The size of the label is " + label:GetSize()
+            end
+        end
+    */
+    action GetSize returns integer
+        return font:GetSize()
+    end
+
+    /*
+    This action rotate the label counter-clockwise by the given number of degrees.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:Rotate(30)
+                Add(label)
+            end
+        end
+    */
+    action Rotate(number angle)
+        textChanged = true
+        font:Rotate(angle)
+        parent:Item2D:Rotate(angle)
+    end
+
+    /*
+    This action sets the angle of the label in degrees.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:SetAngle(90)
+                Add(label)
+            end
+        end
+    */
+    action SetAngle(number angle)
+        textChanged = true
+        font:SetAngle(angle)
+    end
+
+    /*
+    This action returns the angle of the label in degrees.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                
+                label:SetText("Hello world!")
+                label:SetPosition(200, 200)
+                label:SetAngle(90)
+                Add(label)
+                output "The angle of the label is " + label:GetAngle()
+            end
+        end
+    */
+    action GetAngle returns number
+        return font:GetAngle()
+    end
+
+    /*
+    This action is used to make the label reload the images of each character in
+    the label's text. 
+    */
+    private action LoadDrawables
+
+        textChanged = false
+
+        if font:IsLoaded()
+            /* 
+            The size and angle are set before drawing to ensure that FreeType is
+            using the proper parameters for each.
+            NOTE: These calls force the Font to empty its glyph table, thus
+            eliminating much of the benefit of caching them. Long-term, these
+            calls should be removed, and the parameters should be handled more
+            intelligently elsewhere.
+            */
+            font:SetSize(font:GetSize())
+            font:SetAngle(font:GetAngle())
+
+            // Dispose of the old sprites.
+            DisposeChildren()
+            Empty()
+
+
+            integer index = 0
+            number x = 0//GetX()
+            number y = 0//GetY()
+
+            Drawable drawable = undefined
+            Glyph glyph = undefined
+
+            boolean endsWithSpace = false
+
+            if targetText:GetSize() > 0
+                endsWithSpace = targetText:GetCharacter(targetText:GetSize() - 1):Equals(" ")
+            end
+
+            number availableWidth = maxWidth - horizontalMargins
+
+            Array<text> lines = Split(targetText, targetText:GetLineFeed())
+            Array<text> words = undefined
+            Array<Glyph> glyphs
+
+            glyphs:SetSize(targetText:GetSize())
+
+            number originX = x + horizontalMargins
+            number originY = y - verticalMargins
+
+            x = originX
+            y = originY
+
+            integer lineIndex = 0
+            integer wordsIndex = 0
+            integer glyphIndex = 0
+            text currentWord = ""
+            integer currentWordLength = 0
+            integer currentLineLength = 0
+
+            number maxLineWidth = 0
+            number startingOriginY = originY
+
+            repeat lines:GetSize() times
+                words = Split(lines:Get(lineIndex), " ")
+                wordsIndex = 0
+                currentLineLength = 0
+
+                repeat words:GetSize() times
+                    currentWord = words:Get(wordsIndex)
+                    currentWordLength = 0
+                    glyphIndex = 0
+
+                    if wordsIndex + 1 not= words:GetSize() or endsWithSpace
+                        currentWord = currentWord + " "
+                    end
+
+                    repeat currentWord:GetSize() times
+                        glyph = font:GetGlyph(currentWord:GetCharacter(glyphIndex))
+                        glyphs:Set(glyphIndex, glyph)
+                        currentWordLength = currentWordLength + glyph:horizontalAdvance
+                        glyphIndex = glyphIndex + 1
+                    end
+
+                    if availableWidth > 0 and currentLineLength + currentWordLength > availableWidth
+                        if currentLineLength > maxLineWidth
+                            maxLineWidth = currentLineLength
+                        end
+                        currentLineLength = 0
+                        x = originX
+                        y = originY - font:GetLineHeight()
+                        originY = y
+                    end
+
+                    glyphIndex = 0
+                    repeat currentWord:GetSize() times
+                        glyph = glyphs:Get(glyphIndex)
+                        drawable = glyph:drawable
+
+                        if drawable not= undefined
+                            drawable:SetPosition(x + glyph:lengthToGlyph, y + glyph:heightFromBaseLine - drawable:GetHeight())
+                            Add(drawable)
+                        else
+                            Item2D space
+                            space:SetPosition(x + glyph:lengthToGlyph, y + glyph:heightFromBaseLine)
+                            space:SetSize(glyph:horizontalAdvance, glyph:verticalAdvance)
+                            Add(space)
+                        end
+
+                        glyphIndex = glyphIndex + 1
+                        x = x + glyph:horizontalAdvance
+                        y = y + glyph:verticalAdvance
+                        if availableWidth > 0 and x - originX > availableWidth
+                            currentLineLength = 0
+                            currentWordLength = 0
+                            x = originX
+                            y = originY - font:GetLineHeight()
+                            originY = y
+                        end
+                    end
+
+                    wordsIndex = wordsIndex + 1
+                    currentLineLength = currentLineLength + currentWordLength
+
+                end
+
+                if currentLineLength > maxLineWidth
+                    maxLineWidth = currentLineLength
+                end
+
+                // After iterating through all words on this line, we go to the
+                // next line.
+                lineIndex = lineIndex + 1
+                x = originX
+                y = originY - font:GetLineHeight()
+                originY = y
+            end
+
+            
+//            textWidth = maxLineWidth
+//            textHeight = startingOriginY - originY
+            parent:Item2D:SetSize(maxLineWidth, startingOriginY - originY)
+            
+//            textChanged = false
+        end
+
+    end
+
+    /* A custom implementation of the text Split action that does not truncate
+    delimiters at the end of the text. */
+    private action Split(text splitter, text delimiter) returns Array<text>
+        // TODO: Rewrite this. it is horrid. There are much more clever ways to do this.
+
+	Array<text> results
+	integer pos = 0
+	integer length = splitter:GetSize()
+	Text delim
+        delim:SetValue(delimiter)
+	integer delimLength = delim:GetSize()
+	text newString = ""
+        boolean afterDelim = false
+
+	repeat while pos < length
+            // If this doesn't start the delimiter, add it to the new string.
+            if splitter:GetCharacter(pos) not= delim:GetCharacter(0)
+                newString = newString + splitter:GetCharacter(pos)
+                pos = pos + 1
+                afterDelim = false
+            else
+                // Matches start of delimiter. Keep track and bail if we don't match the delimiter
+                text tmpString = ""
+                integer delimPos = 0
+                text currentChar = splitter:GetCharacter(pos)
+                text currentDelimChar = delim:GetCharacter(0)
+
+                // As long as the values read continue to match the delimiter...
+                repeat while delimPos < delimLength and currentChar = currentDelimChar and pos < length
+                    tmpString = tmpString + splitter:GetCharacter(pos)
+                    delimPos = delimPos + 1 // keep going through delimiter
+                    pos = pos + 1 // and keep moving ahead in main string
+                    
+                    if pos < length
+                        currentChar = splitter:GetCharacter(pos)
+                    end
+
+                    if delimPos < delimLength
+                        currentDelimChar = delim:GetCharacter(delimPos)
+                    end
+                end
+
+                if delimPos not= delimLength
+                    // We didn't reach the end of the delimiter, so add this temporary string and keep moving.
+                    tmpString = tmpString + newString
+                    afterDelim = false
+                else
+                    // Delimiter hit. Store the result.
+                    results:Add(newString)
+                    newString = ""  
+                    afterDelim = true
+                end
+            end
+	end
+
+        //if not afterDelim
+            results:Add(newString)
+        //end
+
+        return results
+    end
+
+    /*
+    This action is used to draw the label on the screen. This is handled by the
+    game engine automatically, so most users will not need to use this action
+    directly.
+    */
+    action Draw(Painter2D painter)
+        if textChanged
+            LoadDrawables()
+        end
+        parent:Item2D:Draw(painter)
+    end
+
+    /*
+    action GetDrawables returns List<Drawable>
+        if textChanged
+            LoadDrawables()
+        end
+        return parent:DrawableGroup:GetDrawables()
+    end*/
+
+    /*
+    Returns the width of the longest line of text in the label. This is set
+    automatically when the label's text is added or modified. If the value of
+    GetMaximumWidth() is greater than 0, the value returned by this action will
+    be less than the maximum width, if possible.
+
+    Attribute: Returns The width of the longest line of text in the Label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                label:SetPosition(200, 200)
+                label:SetMaximumWidth(100)
+                label:SetText("This is a lot of text!")
+                Add(label)
+                output "The text width is " + label:GetWidth()
+            end
+
+        end
+    */
+    action GetWidth returns number
+        if textChanged
+            LoadDrawables()
+        end
+        return parent:Item2D:GetWidth()
+    end
+
+    /*
+    Returns the height of all of the text in the label, as it is drawn on the
+    screen. This is set automatically when the label's text is added or
+    modified.
+
+    Attribute: Returns The height of the longest line of text in the Label.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                label:SetPosition(200, 200)
+                label:SetMaximumWidth(100)
+                label:SetText("This is a lot of text!")
+                Add(label)
+                output "The text height is " + label:GetHeight()
+            end
+
+        end
+    */
+    action GetHeight returns number
+        if textChanged
+            LoadDrawables()
+        end
+        return parent:Item2D:GetHeight()
+    end
+
+    /*
+    The SetWidth action typically sets the width of an Item2D, but the Label
+    automatically sets its own width when the text is modified. As a result,
+    this action has no effect on the Label unless the given value is larger than
+    the maximum width set on the Label, in which case it will set the maximum
+    width, and then the Label will rearrange its characters.
+    */
+    action SetWidth(number width)
+        if width > maxWidth
+            SetMaximumWidth(width)
+        end
+    end
+
+    /*
+    The SetHeight action typically sets the height of an Item2D, but the Label
+    automatically sets its own height when the text is modified. As a result,
+    this action has no effect on a Label.
+    */
+    action SetHeight(number height)
+        /*
+        Do nothing. We only allow the height to be adjusted by the private
+        LoadDrawables() action.
+        */
+    end
+
+    /*
+    The SetSize action typically sets the width and height of an Item2D, but the
+    Label automatically sets its own dimensions when the text is modified. If
+    the width is larger than the Label's maximum width, the maximum width will
+    be set to the given width value. Otherwise, this action has no effect.
+    */
+    action SetSize(number width, number height)
+        SetWidth(width)
+    end
+
+    /*
+    This action sets the maximum width that the label can expand up to when
+    arranging characters.
+
+    Attribute: Parameter width The maximum width that the Label should be able to expand up to.
+    */
+    action SetMaximumWidth(number width)
+        maxWidth = width
+        textChanged = true
+    end
+
+    /*
+    This action returns the maximum width that the label can expand up to when
+    arranging characters.
+
+    Attribute: Returns The maximum width that the Label should be able to expand up to.
+    */
+    action GetMaximumWidth returns number
+        return maxWidth
+    end
+
+    /*
+    Returns the height of each individual line of text in the label. This height
+    is uniform for any given font of a particular size, regardless of what the
+    text being drawn is.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Label
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Label label
+                label:SetPosition(200, 200)
+                label:SetMaximumWidth(100)
+                label:SetText("This is a lot of text!")
+                Add(label)
+                output "The line height is " + label:GetLineHeight()
+            end
+
+        end
+    */
+    action GetLineHeight returns integer
+        return font:GetLineHeight()
+    end
+end

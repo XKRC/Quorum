@@ -1,0 +1,16 @@
+/*
+Expected output:
+detect
+*/
+
+class Main
+    action Main
+        repeat 4 times
+            check
+                number f = cast(number, "nope")
+            detect e
+                output "detect"
+            end
+        end
+    end
+end

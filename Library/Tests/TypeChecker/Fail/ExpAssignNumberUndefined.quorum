@@ -1,0 +1,6 @@
+class Main
+    action Main
+        number num = 0.0
+        num = cast(number, undefined)
+    end
+end

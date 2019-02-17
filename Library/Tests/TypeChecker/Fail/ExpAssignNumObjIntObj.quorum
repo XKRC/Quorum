@@ -1,0 +1,8 @@
+class Main
+    action Main
+        Integer i
+        Number num
+        i:SetValue(5)
+        num = cast(Number, i)
+    end
+end

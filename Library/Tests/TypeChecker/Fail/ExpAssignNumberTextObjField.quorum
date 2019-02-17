@@ -1,0 +1,8 @@
+class main
+    Text t
+    number num = 0.0
+    action Main
+        t:SetValue(true)
+        num = cast(number, t)
+    end
+end

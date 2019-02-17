@@ -1,0 +1,555 @@
+package Libraries.Game.Graphics
+
+use Libraries.Containers.Array
+use Libraries.Game.Graphics.Mesh
+use Libraries.Game.Graphics.VertexAttributes
+
+/*
+The Painter2D class is used to draw Drawable objects on the screen. The Game class
+provides a default Painter2D, which is passed to Items and Drawables via their
+Draw action. It is highly recommended to use that Painter2D when using the Game
+class. 
+
+Note that when using the Game class, in most cases it is not necessary to ever 
+use the Painter2D class manually, as the Game class will automatically draw
+Drawables that have been added to it.
+
+Attribute: Example
+
+    use Libraries.Game.Graphics.Painter2D
+    use Libraries.Game.Graphics.Drawable
+    use Libraries.Game.Graphics.Color
+    use Libraries.Game.Game
+
+    class Main is Game
+
+        Painter2D myPainter = undefined
+        Drawable square
+
+        action Main
+            StartGame()
+        end
+
+        action CreateGame
+            Color white
+            white:SetColor(1, 1, 1, 1)
+        
+            square:LoadFilledRectangle(200, 200, white)
+
+            myPainter = parent:Game:batch
+            Color red
+            red:SetColor(1, 0, 0, 1)
+            myPainter:SetColor(red)
+
+            Add(square)
+        end
+
+    end
+*/
+class Painter2D 
+    
+    Texture lastTexture = undefined
+
+    private boolean drawing = false
+
+    private Color color
+
+    private Array<number> vertices
+
+    /*
+    Values used for clipping via glScissor. The coordinates form an axis
+    aligned rectangle. glScissor requires the values of clipX, clipY, clipWidth,
+    and clipHeight. clipX2 and clipY2 (the right and top coordinates of the
+    square, respectively) are stored due to the possibility of frequent reuse
+    by items during drawing.
+    */
+    number clipX = 0
+    number clipY = 0
+    number clipX2 = 0
+    number clipY2 = 0
+    number clipWidth = 0
+    number clipHeight = 0
+
+    on create
+        color = color:White()
+        SetColor(color)
+        LoadDefaultPainter()
+    end
+
+    /*
+    This action will set a color filter on the painter, causing all Drawables
+    drawn by this painter to be tinted with the given color. 
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Graphics.Drawable
+        use Libraries.Game.Graphics.Color
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+            Drawable square
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Color white
+                white:SetColor(1, 1, 1, 1)
+
+                square:LoadFilledRectangle(200, 200, white)
+
+                myPainter = parent:Game:batch
+                Color red
+                red:SetColor(1, 0, 0, 1)
+                myPainter:SetColor(red)
+
+                Add(square)
+            end
+
+        end
+    */
+    system action SetColor(Color newColor)
+
+    /*
+    This action will set a color filter on the painter, causing all Drawables
+    drawn by this painter to be tinted with the given color. The color is set by
+    using four component values between 0 and 1, which represent red, green,
+    blue, and alpha, in that order.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Graphics.Drawable
+        use Libraries.Game.Graphics.Color
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+            Drawable square
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Color white
+                white:SetColor(1, 1, 1, 1)
+
+                square:LoadFilledRectangle(200, 200, white)
+
+                myPainter = parent:Game:batch
+                myPainter:SetColor(1, 0, 0, 1)
+
+                Add(square)
+            end
+
+        end
+    */
+    system action SetColor(number red, number green, number blue, number alpha)
+
+    /*
+    This action returns the current color filter on the Painter2D. The default
+    color filter is white.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Graphics.Color
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+            Color color
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+
+                myPainter = parent:Game:batch
+                color = myPainter:GetColor()
+            end
+
+        end
+    */
+    action GetColor returns Color
+        return color
+    end
+
+    /*
+    This action returns whether the Painter2D is currently active for drawing. A
+    Painter2D becomes active for drawing after calling Painter2D:Begin(), and stays
+    active until Painter2D:End() is called.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+            Drawable square
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                myPainter = parent:Game:batch
+                myPainter:Begin()
+                output "Is Painter2D drawing? " + myPainter:IsDrawing()
+                myPainter:End()
+            end
+
+        end
+    */
+    action IsDrawing returns boolean
+            return drawing
+    end
+
+    /*
+    This action returns whether the Painter2D is currently set to use blending in
+    OpenGL for the pictures that are being drawn.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+            Drawable square
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                myPainter = parent:Game:batch
+                output "Is Painter2D blending? " + myPainter:IsBlendingEnabled()
+            end
+
+        end
+    */
+    system action IsBlendingEnabled returns boolean
+
+    /*
+    Initializes the Painter2D with default settings. The Painter2D can not be used
+    until it is initialized with this action. Note that the default Painter2D
+    provided by the Game class will already be loaded with this action, so you
+    never have to call this action on that Painter2D.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myNewPainter
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                myNewPainter:LoadDefaultPainter()
+            end
+
+        end
+    */
+    private action LoadDefaultPainter
+        Mesh mesh
+        
+        VertexAttributes attributes
+        Array<VertexAttribute> array
+        
+        VertexAttribute position
+        position:SetAttribute(position:POSITION, 2, "a_position")
+        VertexAttribute colorPacked
+        colorPacked:SetAttribute(colorPacked:COLOR_PACKED, 4, "a_color")
+        VertexAttribute textureCoords
+        textureCoords:SetAttribute(textureCoords:TEXTURE_COORDINATES, 2, "a_texCoord0")
+
+        array:Add(position)
+        array:Add(colorPacked)
+        array:Add(textureCoords)
+        attributes:SetAttributes(array)
+
+        mesh:Load(false, 4000, 6000, attributes, true)
+
+        vertices:SetSize(4000)
+
+        integer length = 6000
+        Array<integer> indices
+        indices:SetSize(length)
+
+        integer indexCounter = 0
+        integer vertexCounter = 0
+
+        repeat while indexCounter < length
+            indices:Set(indexCounter, vertexCounter)
+            indices:Set(indexCounter + 1, vertexCounter + 1)
+            indices:Set(indexCounter + 2, vertexCounter + 2)
+            indices:Set(indexCounter + 3, vertexCounter + 2)
+            indices:Set(indexCounter + 4, vertexCounter + 3)
+            indices:Set(indexCounter + 5, vertexCounter)
+
+            indexCounter = indexCounter + 6
+            vertexCounter = vertexCounter + 4
+        end
+
+        mesh:SetIndices(indices)
+
+        LoadDefaultPainter(mesh)
+    end
+
+    private system action LoadDefaultPainter(Mesh mesh)
+
+    /*
+    Activates this Painter2D so it may draw items. If the Painter2D is already
+    active, this will cause an error.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                myPainter = parent:Game:batch
+                myPainter:Begin()
+                myPainter:End()
+            end
+
+        end
+    */
+    system action Begin
+
+    /*
+    Deactivates this Painter2D. A deactivated Painter2D can not draw. If the Painter2D
+    is already deactived, this will cause an error.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            Painter2D myPainter = undefined
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                myPainter = parent:Game:batch
+                myPainter:Begin()
+                myPainter:End()
+            end
+
+        end
+    */
+    system action End
+
+    /*
+    Draws a Drawable on the screen. A Painter2D must be activated with Begin()
+    before it can draw. When using this in the game engine, this should be used
+    inside the Draw action of a class inheriting from Item. If it is drawn as
+    part of the normal update process, the image will draw, then immediately be
+    covered over by the Game's drawing step, keeping the drawn object from being
+    seen.
+    */
+    system action Draw(Drawable drawable)
+
+    /*
+    Disposes of the plugin data stored by the Painter2D, freeing up resources when
+    the Painter2D is no longer needed. This should never be called on the default
+    Painter2D provided by the Game class.
+
+    Attribute: Example
+
+        use Libraries.Game.Graphics.Painter2D
+        use Libraries.Game.Game
+
+        class Main is Game
+
+            action Main
+                StartGame()
+            end
+
+            action CreateGame
+                Painter2D myNewPainter
+                myNewPainter:Dispose()
+            end
+
+        end
+    */
+    system action Dispose
+
+    /*
+    This action forces the Painter2D to immediately draw all images it has stored
+    inside of it that are awaiting processing.
+    */
+    system action Flush
+
+    /*
+    This action will set the Painter2D to render objects on the screen relative
+    to the given camera.
+    */
+    system action ApplyCamera(Camera camera)
+
+    /*
+    This action gives the plugins a shortcut to conveniently set a single index
+    of the array. Although this action is private, the plugins may still access
+    it because they do not respect the "private" flag.
+    */
+    private action SetVertex(integer index, number value)
+        vertices:Set(index, value)
+    end
+
+    /*
+    This action gives the plugins a way to conveniently reference the vertices
+    array. Although this action is private, the plugins may still access it
+    because they do not respect the "private" flag.
+    */
+    private action GetVertices returns Array<number>
+        return vertices
+    end
+
+    /*
+    The SetClipping action enables pixel clipping for anything which is drawn by
+    this Painter. Pixels are clipped in a rectangle defined by the Painter's
+    clip coordinates.
+
+    Attribute: Parameter clip True to enable clipping, false to disable clipping.
+    */
+    system action SetClipping(boolean clip)
+
+    /*
+    The IsClipping action returns whether or not the Painter is currently
+    using pixel clipping during drawing.
+
+    Attribute: Returns True to enable clipping, false to disable clipping.
+    */
+    system action IsClipping returns boolean
+
+    /*
+    The GetClipX action returns the x coordinate (in world coordinates) of the
+    bottom-left corner of the clipping rectangle.
+
+    Attribute: Returns The bottom-left x coordinate of the clipping rectangle.
+    */
+    action GetClipX returns number
+        return clipX
+    end
+
+    /*
+    The GetClipY action returns the y coordinate (in world coordinates) of the
+    bottom-left corner of the clipping rectangle.
+
+    Attribute: Returns The bottom-left y coordinate of the clipping rectangle.
+    */
+    action GetClipY returns number
+        return clipY
+    end
+
+    /*
+    The GetClipX2 action returns the x coordinate (in world coordinates) of the
+    top-right corner of the clipping rectangle.
+
+    Attribute: Returns The top-right x coordinate of the clipping rectangle.
+    */
+    action GetClipX2 returns number
+        return clipX2
+    end
+
+    /*
+    The GetClipY2 action returns the y coordinate (in world coordinates) of the
+    top-right corner of the clipping rectangle.
+
+    Attribute: Returns The top-right y coordinate of the clipping rectangle.
+    */
+    action GetClipY2 returns number
+        return clipY2
+    end
+
+    /*
+    The GetClipWidth action returns the width (in world coordinates) of the
+    clipping rectangle.
+
+    Attribute: Returns The width of the clipping rectangle.
+    */
+    action GetClipWidth returns number
+        return clipWidth
+    end
+
+    /*
+    The GetClipHeight action returns the height (in world coordinates) of the
+    clipping rectangle.
+
+    Attribute: Returns The height of the clipping rectangle.
+    */
+    action GetClipHeight returns number
+        return clipHeight
+    end
+
+    /*
+    The SetClipCoordinates action sets the x, y coordinates of the bottom-left
+    corner and the x, y coordinates of the top-right corner of the clipping
+    rectangle.
+
+    Attribute: Parameter x1 The x coordinate of the left side of the rectangle.
+    Attribute: Parameter y1 The y coordinate of the bottom side of the rectangle.
+    Attribute: Parameter x2 The x coordinate of the right side of the rectangle.
+    Attribute: Parameter y2 The y coordinate of the top side of the rectangle.
+    */
+    action SetClipCoordinates(number x1, number y1, number x2, number y2)
+        clipX = x1
+        clipY = y1
+        clipX2 = x2
+        clipY2 = y2
+        clipWidth = x2 - x1
+        clipHeight = y2 - y1
+        UpdateClipping()
+    end
+
+    /*
+    The SetClipDimensions action sets the x, y coordinates of the bottom-left
+    corner and the width and height of the clipping rectangle.
+
+    Attribute: Parameter x The x coordinate of the left side of the rectangle.
+    Attribute: Parameter y The y coordinate of the bottom side of the rectangle.
+    Attribute: Parameter width The width of the rectangle.
+    Attribute: Parameter height The height of the rectangle.
+    */
+    action SetClipDimensions(number x, number y, number width, number height)
+        clipX = x
+        clipY = y
+        clipX2 = x + width
+        clipY2 = y + height
+        clipWidth = width
+        clipHeight = height
+        UpdateClipping()
+    end
+
+    private system action UpdateClipping
+
+end

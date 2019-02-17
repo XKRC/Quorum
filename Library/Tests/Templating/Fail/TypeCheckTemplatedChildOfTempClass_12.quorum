@@ -1,0 +1,6 @@
+class main
+    action Main
+        B<integer> b
+        b:setSomething("wow!")
+    end
+end

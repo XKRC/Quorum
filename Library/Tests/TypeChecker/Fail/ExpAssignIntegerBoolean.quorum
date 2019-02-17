@@ -1,0 +1,6 @@
+class Main
+    action Main
+        integer int = 0
+        int = cast(integer, true)
+    end
+end

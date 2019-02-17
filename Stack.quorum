@@ -1,0 +1,37 @@
+use Libraries.Containers.List
+
+/* This class is a linked list implementation of the stack. 
+ * GOAL: implement push, pop, and top methods
+*/
+class Stack<Type>
+    List<Type> stack    //the linked list that implements the stack 
+
+    /*
+    * This action will add a value to the top of the stack, which is the front of the linked list.
+    * Parameter: itemToPush, the item to be added to the top of the stack 
+    * Returns: nothing 
+    */
+    action Push(Type itemToPush)
+        stack:AddToFront(itemToPush)
+    end
+
+
+    /*
+    * Since the top of the stack is in the front, this action will remove the top item of the stack (which is the first item of the linked list).
+    * Parameter: nothing 
+    * Returns: the value at the top of the stack 
+    */
+    action Pop() returns Type
+        return stack:RemoveFromFront()
+    end
+
+
+    /*
+    * This action returns the top of the stack without removing that item.
+    * Parameter: nothing 
+    * Returns: the value at the top of the stack 
+    */
+    action Top() returns Type
+        return stack:GetFromFront()
+    end
+end

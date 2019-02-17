@@ -1,0 +1,5 @@
+use B
+
+class C is B
+
+end

@@ -1,0 +1,92 @@
+package Libraries.Game
+
+/*
+    GameDisplay is responsible for handling information about LWJGL's Display
+    object, which represents the game screen.
+  
+  source:
+  https://github.com/libgdx/libgdx/blob/master/backends/gdx-backend-lwjgl/src/com/badlogic/gdx/backends/lwjgl/LwjglGraphics.java
+ */
+
+/*
+This class represents the game window. This class is handled automatically by
+the Game class. Most users will never need to interact with this class directly.
+*/
+class GameDisplay 
+
+    /* 
+    This action sets the ApplicationConfiguration being used by the game,
+    which includes data for the screen. The ApplicationConfiguration must be of
+    the correct type or otherwise an error will be thrown, e.g., if the
+    GameDisplay is a DesktopDisplay, it must receive a DesktopConfiguration.
+    */
+    blueprint action SetConfiguration(ApplicationConfiguration conf)
+
+    /*
+    This action returns the ApplicationConfiguration being used by the
+    GameDisplay.
+    */
+    blueprint action GetConfiguration returns ApplicationConfiguration
+
+    /*
+    This action initializes the GameDisplay.
+    */
+    //system action SetupDisplay()
+
+    /*
+    This action sets the width and height of the GameDisplay, and optionally
+    makes the game full screen. Returns a boolean value indicating whether the
+    action was successful - for example, this should typically work on desktops,
+    but on mobile devices it will fail and return false.
+    */
+    blueprint action SetDisplayMode(integer width, integer height, 
+                                 boolean fullscreen) returns boolean
+
+    /*
+    This action returns the width of the GameDisplay.
+    */
+    blueprint action GetWidth returns integer
+
+    /*
+    This action returns the height of the GameDisplay.
+    */
+    blueprint action GetHeight returns integer
+    //system action GetDisplayMode(DisplayMode disp) returns boolean
+
+    /*
+    This action sets vSync on or off for the GameDisplay.
+    */
+    blueprint action SetVSync(boolean vsync)
+
+    /*
+    This action returns whether the GameDisplay is resizable or not.
+    */
+    blueprint action GetResize returns boolean
+
+    /*
+    This action returns whether or not the GameDisplay has been resized.
+    */
+    blueprint action WasResized returns boolean
+
+    /*
+    This action tells the GameDisplay to render to the screen.
+    */
+    blueprint action RequestRendering
+
+    /*
+    This action closes the window.
+    */
+    blueprint action Destroy
+
+    /*
+    This action tests how many seconds have passed since the last time that the
+    time was updated.
+    */
+    blueprint action GetSecondsBetweenFrames returns number
+
+    /*
+    This action returns the ratio between screen coordinates and pixels.
+    */
+    blueprint action GetPixelScaleFactor returns number
+
+end

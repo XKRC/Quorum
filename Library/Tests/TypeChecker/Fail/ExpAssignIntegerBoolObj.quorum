@@ -1,0 +1,8 @@
+class Main
+    action Main
+        integer i
+        Boolean b
+        b:SetValue(true)
+        i = cast(integer, b)
+    end
+end

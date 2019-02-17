@@ -1,0 +1,9 @@
+class Main
+    action Main
+        integer int = 0
+        int = cast(integer, 5)
+        if int = 5
+            output "passed"
+        end
+    end
+end

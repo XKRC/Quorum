@@ -1,0 +1,83 @@
+use Libraries.System.Console
+use Libraries.Containers.Array
+
+/*
+* GOAL: implement a class to do postfix evaluations.
+*/
+
+
+/*
+* This class implements postfix evaluation of integers.
+*/
+class Main
+    /*
+    * This action is the starting point of the Main class.
+    */
+    action Main    
+        Console c                           //to get the console arguments
+        Text arguments                      //stores the console arguments obtained
+        integer counter = 0                 //integer counter for the repeat-end loop
+        Stack<integer> operandStack         //the stack that contains integers, which are operands 
+        integer valueRHS = 0                //the RHS of a binary operator
+        integer valueLHS = 0                //the LHS of a binary operator 
+        boolean integerRead = false         //stores whether an integer read has started, used for multiple digit integers 
+        integer tempInteger = 0             //stores the integer read 
+        integer value = 0                   //stores a digit of an integer read 
+        arguments = cast(Text,c:GetConsoleArguments():Get(0))           //the argument passed into the program
+
+        //arguments = cast(Text,"10 2 8 * + 3 -")
+
+        repeat arguments:GetSize() times
+            check
+                value = cast(integer, arguments:GetCharacter(counter))      //check if the value read is an integer 
+                if integerRead = false
+                    integerRead = true
+                    tempInteger = value
+                else
+                    tempInteger = tempInteger*10
+                    tempInteger = tempInteger + value
+                end
+            detect e
+                //start checking if it is a blank space or a operand
+                if arguments:GetCharacter(counter) = " "
+                    //output "blank space"
+                    if integerRead = true
+                        //output tempInteger
+                        operandStack:Push(tempInteger)
+                    end
+                    integerRead = false
+                elseif arguments:GetCharacter(counter)  = "-"
+                    //output "subtraction"
+                    valueRHS = operandStack:Pop()
+                    valueLHS = operandStack:Pop()
+                    operandStack:Push(valueLHS - valueRHS)
+                elseif arguments:GetCharacter(counter)  = "+"  
+                    //output "addition"
+                    valueRHS = operandStack:Pop()
+                    valueLHS = operandStack:Pop()
+                    operandStack:Push(valueLHS + valueRHS)
+                elseif arguments:GetCharacter(counter)  = "*" 
+                    //output "multiplication"
+                    valueRHS = operandStack:Pop()
+                    valueLHS = operandStack:Pop()
+                    operandStack:Push(valueLHS * valueRHS)
+                elseif arguments:GetCharacter(counter)  = "/" 
+                    //output "division"
+                    valueRHS = operandStack:Pop()
+                    valueLHS = operandStack:Pop()
+                    operandStack:Push(valueLHS / valueRHS)
+                elseif arguments:GetCharacter(counter) = "%" 
+                    //output "modulation"
+                    valueRHS = operandStack:Pop()
+                    valueLHS = operandStack:Pop()
+                    operandStack:Push(valueLHS mod valueRHS)
+                else 
+                    output "Error: unknown symbol or operand"
+                end
+            end
+            counter = counter + 1
+        end
+
+        output operandStack:Pop()   //output the results
+    end //end action Main
+end

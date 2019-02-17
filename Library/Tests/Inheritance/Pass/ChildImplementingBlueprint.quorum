@@ -1,0 +1,8 @@
+use Parent
+
+class Child is Parent
+    action Test
+        text result = "child"
+        output result
+    end
+end
